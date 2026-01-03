@@ -1,0 +1,61 @@
+{
+  "name": "ghost-line",
+  "displayName": "Ghost Line 👻",
+  "description": "Global undo is mid; it’s time for a surgical flex. GhostLine gives you atomic, line-level time travel in VS Code so you can yeet a typo without nuking your entire flow. No cap, it’s the precision tool for developers who are tired of their keyboard buffer acting like a sledgehammer.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.107.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onLanguage:*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "line-undo.undo",
+        "title": "Ghost Line: Undo Current Line"
+      },
+      {
+        "command": "line-undo.redo",
+        "title": "Ghost Line: Redo Current Line"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "line-undo.undo",
+        "key": "ctrl+alt+z",
+        "mac": "cmd+alt+z",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "line-undo.redo",
+        "key": "ctrl+alt+shift+z",
+        "mac": "cmd+alt+shift+z",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.107.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "typescript-eslint": "^8.48.1",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}

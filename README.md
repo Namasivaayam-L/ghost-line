@@ -1,71 +1,124 @@
-# ghost-line README
-
-This is the README for your extension "ghost-line". After writing up a brief description, we recommend including the following sections.
-
-## Features
-
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
 
 ---
 
-## Following extension guidelines
+# 👻 Ghost Line
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+**Atomic, line-level undo & redo for VS Code.**
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+Global undo (`Ctrl+Z`) is great — until it isn’t.
+Ghost Line gives you **surgical control**: undo or redo **only the current line**, without rewinding unrelated edits elsewhere in the file.
 
-## Working with Markdown
+This extension is designed for developers who want precision instead of chaos.
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+---
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+## ✨ Features
 
-## For more information
+* **Line-level undo / redo**
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+  * Undo or redo changes on the *current line only*
+  * Other lines remain untouched
 
-**Enjoy!**
+* **Independent from global undo**
+
+  * Does not interfere with VS Code’s native undo stack
+
+* **Snapshot-based & deterministic**
+
+  * Tracks intentional edit boundaries instead of raw keystrokes
+  * Avoids broken or partial undo states
+
+* **Debounced history capture**
+
+  * Line state is saved after typing pauses (default: 400ms)
+  * Prevents noisy, character-by-character undo steps
+
+* **Handles line shifts**
+
+  * History stays attached even when lines move due to:
+
+    * Enter
+    * Delete
+    * Paste
+    * Multi-line edits
+
+---
+
+## ⌨️ Commands & Shortcuts
+
+| Action    | Command     | Default Shortcut         |
+| --------- | ----------- | ------------------------ |
+| Line Undo | `Line Undo` | `Ctrl + Alt + Z`         |
+| Line Redo | `Line Redo` | `Ctrl + Alt + Shift + Z` |
+
+> You can rebind these shortcuts from **Keyboard Shortcuts**.
+
+---
+
+## 🧠 How It Works (High-level)
+
+Ghost Line uses a **snapshot-based model**, not a diff-based one.
+
+* Each line maintains its own history:
+
+  * undo stack
+  * redo stack
+  * current snapshot
+* Snapshots are captured:
+
+  * when typing pauses (debounced)
+  * when you move the cursor onto a line
+* Undo/redo restores snapshots **only for the active line**
+
+This design avoids API limitations in VS Code and ensures predictable behavior.
+
+---
+
+## ⚠️ Known Limitations (by design)
+
+* Multi-cursor editing is currently tracked using the **primary cursor only**
+* Undo history is **per session** (not persisted across reloads)
+* Snapshot commits require either:
+
+  * a short pause in typing, or
+  * a cursor movement
+
+These trade-offs are intentional for correctness and stability.
+
+---
+
+## 🛠️ Development Status
+
+This is the **initial public version**.
+
+Planned improvements:
+
+* Snapshot-on-idle refinement
+* Multi-cursor support
+* Visual indicators for lines with history
+* Optional persistence
+
+Contributions and feedback are welcome.
+
+---
+
+## 📦 Installation
+
+Until published on the Marketplace:
+
+```bash
+git clone https://github.com/<your-username>/ghost-line
+cd ghost-line
+npm install
+npm run compile
+```
+
+Press `F5` in VS Code to launch the Extension Development Host.
+
+---
+
+## 📜 License
+
+MIT
+
+---
