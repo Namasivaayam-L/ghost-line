@@ -6,9 +6,7 @@ interface LineHistory {
     currentSnapshot: string;
 }
 
-// We store history as: Map<FileName, Map<LineNumber, HistoryObj>>
 const history = new Map<string, Map<number, LineHistory>>();
-
 let isProgrammatic = false;
 let debounceTimer: NodeJS.Timeout | undefined;
 
@@ -16,116 +14,50 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('Ghost Line 👻 ACTIVE');
 
     context.subscriptions.push(
-        // Listen to text changes (typing, pasting, deleting lines)
         vscode.workspace.onDidChangeTextDocument(onDocumentChange),
-        
-        // Listen to cursor moves (to init history for new lines we land on)
         vscode.window.onDidChangeTextEditorSelection(onSelectionChange),
-
-        // Commands
         vscode.commands.registerCommand('line-undo.undo', () => restore('undo')),
-        vscode.commands.registerCommand('line-undo.redo', () => restore('redo'))
+        vscode.commands.registerCommand('line-undo.redo', () => restore('redo')),
+        vscode.commands.registerCommand('ghostLine.listUndo', () => showLineHistory('undo')),
+        vscode.commands.registerCommand('ghostLine.listRedo', () => showLineHistory('redo'))
     );
 }
 
-/**
- * 1. Handle Text Changes
- * - First: Adjust line numbers in our Map if lines were added/removed.
- * - Second: Debounce and save the new state of the modified line.
- */
 function onDocumentChange(e: vscode.TextDocumentChangeEvent) {
     if (isProgrammatic) return;
 
     const uri = e.document.uri.toString();
-    
-    // A. HANDLE LINE SHIFTS (Enter key, Deletions, Pastes)
-    // We must update our Map keys so history stays attached to the correct code.
+
     if (e.contentChanges.length > 0) {
         adjustLineHistoryOffsets(uri, e.contentChanges);
     }
 
-    // B. SAVE SNAPSHOT (Debounced)
-    // We only track the primary change for the undo stack to keep it simple
     if (e.contentChanges.length === 0) return;
-    
-    const primaryChange = e.contentChanges[0];
-    const lineIndex = primaryChange.range.start.line;
-    const document = e.document;
-    
-    // Edge case: If line was deleted, range.start.line might be out of bounds now?
-    // checking bounds just in case.
-    if (lineIndex >= document.lineCount) return;
 
-    const text = document.lineAt(lineIndex).text;
+    const change = e.contentChanges[0];
+    const line = change.range.start.line;
+    if (line >= e.document.lineCount) return;
 
-    // Reset timer
+    const text = e.document.lineAt(line).text;
+
     if (debounceTimer) clearTimeout(debounceTimer);
-
-    // Wait 400ms after typing stops to save
     debounceTimer = setTimeout(() => {
-        saveSnapshot(uri, lineIndex, text);
+        saveSnapshot(uri, line, text);
     }, 400);
 }
 
-/**
- * Adjusts the keys in our History Map when lines move up or down.
- */
-function adjustLineHistoryOffsets(uri: string, changes: readonly vscode.TextDocumentContentChangeEvent[]) {
-    if (!history.has(uri)) return;
-    const fileHistory = history.get(uri)!;
-    const newFileHistory = new Map<number, LineHistory>();
-
-    // We iterate over every existing history entry and calculate its new line number
-    for (const [oldLineKey, hist] of fileHistory) {
-        let newLineKey = oldLineKey;
-        let shouldDelete = false;
-
-        // Apply effect of every change on this line key
-        for (const change of changes) {
-            const linesAdded = (change.text.match(/\n/g) || []).length;
-            const linesRemoved = change.range.end.line - change.range.start.line;
-            const delta = linesAdded - linesRemoved;
-
-            // If the history-line is BELOW the change, it shifts
-            if (oldLineKey > change.range.end.line) {
-                newLineKey += delta;
-            } 
-            // If the history-line is INSIDE the changed range (and it's not the start line),
-            // it effectively got merged or deleted. We drop the history to avoid ghosts.
-            else if (oldLineKey > change.range.start.line && oldLineKey <= change.range.end.line) {
-                shouldDelete = true;
-            }
-        }
-
-        if (!shouldDelete) {
-            newFileHistory.set(newLineKey, hist);
-        }
-    }
-
-    // Update the main storage with the shifted keys
-    history.set(uri, newFileHistory);
-}
-
-/**
- * 2. Handle Cursor Selection
- * Just ensures we have an init state when clicking onto a line.
- */
 function onSelectionChange(e: vscode.TextEditorSelectionChangeEvent) {
     if (isProgrammatic) return;
 
     const editor = e.textEditor;
-    // Multi-cursor support is tricky; let's grab the primary cursor
-    const line = e.selections[0].active.line;
+    const line = editor.selections[0].active.line;
     const uri = editor.document.uri.toString();
     const text = editor.document.lineAt(line).text;
 
-    saveSnapshot(uri, line, text, true); 
+    saveSnapshot(uri, line, text, true);
 }
 
-/**
- * Core Logic: Save state to stack
- */
-function saveSnapshot(uri: string, line: number, text: string, onlyInitIfMissing: boolean = false) {
+function saveSnapshot(uri: string, line: number, text: string, onlyInitIfMissing = false) {
     if (!history.has(uri)) history.set(uri, new Map());
     const fileHistory = history.get(uri)!;
 
@@ -133,64 +65,116 @@ function saveSnapshot(uri: string, line: number, text: string, onlyInitIfMissing
         fileHistory.set(line, {
             undoStack: [],
             redoStack: [],
-            currentSnapshot: text // Initial state
+            currentSnapshot: text
         });
         return;
     }
 
     if (onlyInitIfMissing) return;
 
-    const lineHistory = fileHistory.get(line)!;
-
-    // Only push if text actually changed
-    if (lineHistory.currentSnapshot !== text) {
-        lineHistory.undoStack.push(lineHistory.currentSnapshot);
-        lineHistory.redoStack = []; // Clear redo on new branch
-        lineHistory.currentSnapshot = text;
+    const h = fileHistory.get(line)!;
+    if (h.currentSnapshot !== text) {
+        h.undoStack.push(h.currentSnapshot);
+        h.redoStack = [];
+        h.currentSnapshot = text;
     }
 }
 
-/**
- * 3. Restore (Undo/Redo)
- */
 async function restore(action: 'undo' | 'redo') {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
 
     const line = editor.selection.active.line;
     const uri = editor.document.uri.toString();
-    const fileHistory = history.get(uri);
-    
-    if (!fileHistory || !fileHistory.get(line)) {
-        vscode.window.setStatusBarMessage(`Ghost Line: nothing to ${action} (no history)`, 2000);
-        return;
-    }
+    const h = history.get(uri)?.get(line);
+    if (!h) return;
 
-    const lineHistory = fileHistory.get(line)!;
-    const source = action === 'undo' ? lineHistory.undoStack : lineHistory.redoStack;
-    const target = action === 'undo' ? lineHistory.redoStack : lineHistory.undoStack;
+    const source = action === 'undo' ? h.undoStack : h.redoStack;
+    const target = action === 'undo' ? h.redoStack : h.undoStack;
+    if (source.length === 0) return;
 
-    if (source.length === 0) {
-        vscode.window.setStatusBarMessage(`Ghost Line: nothing to ${action}`, 2000);
-        return;
-    }
-
-    // 1. Push current state to target stack (so we can reverse this restore)
     const currentText = editor.document.lineAt(line).text;
     target.push(currentText);
-    
-    // 2. Pop the state we want
     const restoreText = source.pop()!;
 
-    // 3. Apply edit
     isProgrammatic = true;
     await editor.edit(b => {
         b.replace(editor.document.lineAt(line).range, restoreText);
     });
     isProgrammatic = false;
 
-    // 4. Update snapshot tracking
-    lineHistory.currentSnapshot = restoreText;
+    h.currentSnapshot = restoreText;
+}
+
+function adjustLineHistoryOffsets(uri: string, changes: readonly vscode.TextDocumentContentChangeEvent[]) {
+    if (!history.has(uri)) return;
+    const fileHistory = history.get(uri)!;
+    const next = new Map<number, LineHistory>();
+
+    for (const [line, h] of fileHistory) {
+        let newLine = line;
+        let drop = false;
+
+        for (const c of changes) {
+            const added = (c.text.match(/\n/g) || []).length;
+            const removed = c.range.end.line - c.range.start.line;
+            const delta = added - removed;
+
+            if (line > c.range.end.line) newLine += delta;
+            else if (line > c.range.start.line && line <= c.range.end.line) drop = true;
+        }
+
+        if (!drop) next.set(newLine, h);
+    }
+
+    history.set(uri, next);
+}
+
+async function showLineHistory(mode: 'undo' | 'redo') {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return;
+
+    const line = editor.selection.active.line;
+    const uri = editor.document.uri.toString();
+    const h = history.get(uri)?.get(line);
+    if (!h) return;
+
+    const stack = mode === 'undo' ? h.undoStack : h.redoStack;
+    if (stack.length === 0) {
+        vscode.window.showInformationMessage(`Ghost Line: no ${mode} history for this line`);
+        return;
+    }
+
+    const items: vscode.QuickPickItem[] = [];
+    const ordered = mode === 'undo' ? stack : [...stack].reverse();
+
+    for (let i = 0; i < ordered.length; i++) {
+        items.push({
+            label: `${mode === 'undo' ? 'Undo' : 'Redo'} #${i + 1}`,
+            description: truncate(ordered[i]),
+            detail: ordered[i]
+        });
+    }
+
+    const picked = await vscode.window.showQuickPick(items, {
+        title: `👻 Ghost Line ${mode === 'undo' ? 'Undo' : 'Redo'} History`,
+        canPickMany: false
+    });
+
+    if (!picked) return;
+
+    const text = picked.detail!;
+    isProgrammatic = true;
+    await editor.edit(b => {
+        b.replace(editor.document.lineAt(line).range, text);
+    });
+    isProgrammatic = false;
+
+    h.currentSnapshot = text;
+}
+
+function truncate(text: string, max = 80) {
+    return text.length > max ? text.slice(0, max) + '…' : text;
 }
 
 export function deactivate() {}

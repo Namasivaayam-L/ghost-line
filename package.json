@@ -16,14 +16,10 @@
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
-      {
-        "command": "line-undo.undo",
-        "title": "Ghost Line: Undo Current Line"
-      },
-      {
-        "command": "line-undo.redo",
-        "title": "Ghost Line: Redo Current Line"
-      }
+      { "command": "line-undo.undo", "title": "Ghost Line: Undo Line" },
+      { "command": "line-undo.redo", "title": "Ghost Line: Redo Line" },
+      { "command": "ghostLine.listUndo", "title": "Ghost Line: List Line Undos" },
+      { "command": "ghostLine.listRedo", "title": "Ghost Line: List Line Redos" }
     ],
     "keybindings": [
       {
@@ -33,9 +29,21 @@
         "when": "editorTextFocus"
       },
       {
+        "command": "ghostLine.listUndo",
+        "key": "ctrl+shift+alt+z",
+        "mac": "cmd+shift+alt+z",
+        "when": "editorTextFocus"
+      },
+      {
         "command": "line-undo.redo",
-        "key": "ctrl+alt+shift+z",
-        "mac": "cmd+alt+shift+z",
+        "key": "ctrl+alt+y",
+        "mac": "cmd+alt+y",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "ghostLine.listRedo",
+        "key": "ctrl+shift+alt+y",
+        "mac": "cmd+shift+alt+y",
         "when": "editorTextFocus"
       }
     ]
