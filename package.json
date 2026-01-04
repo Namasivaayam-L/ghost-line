@@ -46,7 +46,30 @@
         "mac": "cmd+shift+alt+y",
         "when": "editorTextFocus"
       }
-    ]
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Ghost Line",
+      "properties": {
+        "ghostLine.maxHistoryPerLine": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "description": "Maximum undo snapshots stored per line"
+        },
+        "ghostLine.idleDelay": {
+          "type": "number",
+          "default": 400,
+          "minimum": 0,
+          "description": "Idle delay (ms) before snapshot. Set 0 to disable."
+        },
+        "ghostLine.enableShortcuts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable keyboard shortcuts for Ghost Line undo/redo"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

@@ -10,21 +10,34 @@ const history = new Map<string, Map<number, LineHistory>>();
 let isProgrammatic = false;
 let debounceTimer: NodeJS.Timeout | undefined;
 
+function getConfig() {
+    const cfg = vscode.workspace.getConfiguration('ghostLine');
+    return {
+        maxHistoryPerLine: cfg.get<number>('maxHistoryPerLine', 20),
+        idleDelay: cfg.get<number>('idleDelay', 400),
+        enableShortcuts: cfg.get<boolean>('enableShortcuts', true)
+    };
+}
+
 export function activate(context: vscode.ExtensionContext) {
     console.log('Ghost Line 👻 ACTIVE');
 
     context.subscriptions.push(
         vscode.workspace.onDidChangeTextDocument(onDocumentChange),
         vscode.window.onDidChangeTextEditorSelection(onSelectionChange),
-        vscode.commands.registerCommand('line-undo.undo', () => restore('undo')),
-        vscode.commands.registerCommand('line-undo.redo', () => restore('redo')),
-        vscode.commands.registerCommand('ghostLine.listUndo', () => showLineHistory('undo')),
-        vscode.commands.registerCommand('ghostLine.listRedo', () => showLineHistory('redo'))
+        vscode.commands.registerCommand('line-undo.undo', () => guardedRestore('undo')),
+        vscode.commands.registerCommand('line-undo.redo', () => guardedRestore('redo')),
+        vscode.commands.registerCommand('ghostLine.listUndo', () => guardedShowHistory('undo')),
+        vscode.commands.registerCommand('ghostLine.listRedo', () => guardedShowHistory('redo'))
+
     );
 }
 
 function onDocumentChange(e: vscode.TextDocumentChangeEvent) {
     if (isProgrammatic) return;
+
+    const { idleDelay } = getConfig();
+    if (idleDelay <= 0) return;
 
     const uri = e.document.uri.toString();
 
@@ -43,7 +56,7 @@ function onDocumentChange(e: vscode.TextDocumentChangeEvent) {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
         saveSnapshot(uri, line, text);
-    }, 400);
+    }, idleDelay);
 }
 
 function onSelectionChange(e: vscode.TextEditorSelectionChangeEvent) {
@@ -58,6 +71,8 @@ function onSelectionChange(e: vscode.TextEditorSelectionChangeEvent) {
 }
 
 function saveSnapshot(uri: string, line: number, text: string, onlyInitIfMissing = false) {
+    const { maxHistoryPerLine } = getConfig();
+
     if (!history.has(uri)) history.set(uri, new Map());
     const fileHistory = history.get(uri)!;
 
@@ -73,11 +88,21 @@ function saveSnapshot(uri: string, line: number, text: string, onlyInitIfMissing
     if (onlyInitIfMissing) return;
 
     const h = fileHistory.get(line)!;
+
     if (h.currentSnapshot !== text) {
         h.undoStack.push(h.currentSnapshot);
+        if (h.undoStack.length > maxHistoryPerLine) {
+            h.undoStack.shift();
+        }
         h.redoStack = [];
         h.currentSnapshot = text;
     }
+}
+
+async function guardedRestore(action: 'undo' | 'redo') {
+    const { enableShortcuts } = getConfig();
+    if (!enableShortcuts) return;
+    await restore(action);
 }
 
 async function restore(action: 'undo' | 'redo') {
@@ -130,6 +155,13 @@ function adjustLineHistoryOffsets(uri: string, changes: readonly vscode.TextDocu
     history.set(uri, next);
 }
 
+async function guardedShowHistory(mode: 'undo' | 'redo') {
+    const { enableShortcuts } = getConfig();
+    if (!enableShortcuts) return;
+    await showLineHistory(mode);
+}
+
+
 async function showLineHistory(mode: 'undo' | 'redo') {
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
@@ -146,7 +178,8 @@ async function showLineHistory(mode: 'undo' | 'redo') {
     }
 
     const items: vscode.QuickPickItem[] = [];
-    const ordered = mode === 'undo' ? stack : [...stack].reverse();
+    // const ordered = mode === 'undo' ? stack : [...stack].reverse();
+    const ordered = [...stack].reverse();
 
     for (let i = 0; i < ordered.length; i++) {
         items.push({
