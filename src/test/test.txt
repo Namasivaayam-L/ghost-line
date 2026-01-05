@@ -1,26 +1,8 @@
-hellow owrldasldfa;
-hi there a;lskf;a
-dsfja;sdl fafasdfna 
+Steps:
+1. Paste multiple lines
+2. Undo per 
 
-hi there test 3
-
-hi theere as;dlfkasd
-
-asdfasdf
-asdfasdfasd
-fafasdfna
-
-Hello Universe
-
-Hello Universe
-Hello World
-
-
-hello Univers
-hellow milky way
-
-
-hi there asdf a;sdf asdlkf
-as;dlfa;sldf a;s
-
-universe
+Expect:
+- Best-dsasdfrt behavior
+- No crashes
+- No corrupted history map aslkfas
