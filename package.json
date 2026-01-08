@@ -1,8 +1,20 @@
 {
   "name": "ghost-line",
-  "displayName": "Ghost Line 👻",
+  "displayName": "Ghost Line",
+  "publisher": "namachu",
   "description": "Global undo is mid; it’s time for a surgical flex. GhostLine gives you atomic, line-level time travel in VS Code so you can yeet a typo without nuking your entire flow. No cap, it’s the precision tool for developers who are tired of their keyboard buffer acting like a sledgehammer.",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Namasivaayam-L/ghost-line.git"
+  },
+  "homepage": "https://github.com/Namasivaayam-L/ghost-line",
+  "bugs": {
+    "url": "https://github.com/Namasivaayam-L/ghost-line/issues"
+  },
+  "license": "UNLICENSED",
+  "keywords": ["vscode","extension","undo","line","ghost-line"],
+  "icon": "public/logo.png",
   "engines": {
     "vscode": "^1.107.0"
   },
@@ -11,7 +23,7 @@
   ],
   "activationEvents": [
     "onStartupFinished",
-    "onLanguage:*"
+    "onLanguage"
   ],
   "main": "./out/extension.js",
   "contributes": {
