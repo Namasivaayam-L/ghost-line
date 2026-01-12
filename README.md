@@ -1,141 +1,132 @@
 # 👻 Ghost Line
 
-**Surgical, line-level undo & redo for VS Code.**
+**Intent-aware, line-level undo & redo for VS Code.**
 
-Global undo (`Ctrl+Z`) is powerful — and wildly overkill.
-Ghost Line gives you **deterministic, snapshot-based undo and redo for a single line**, without rewinding unrelated edits elsewhere in the file.
+Global undo (`Ctrl + Z`) is powerful — and often destructive.
+Ghost Line gives you **surgical undo**: revert **only the current line**, without touching anything else.
 
-No magic. No noise. Just precision.
-
----
-
-## Why Ghost Line Exists
-
-VS Code’s global undo stack is **temporal**, not **intentional**.
-
-That means:
-- Editing two distant lines interleaves undo history
-- Fixing a typo can nuke unrelated progress
-- Undo becomes a gamble instead of a tool
-
-Ghost Line fixes this by treating **each line as an independent editing unit**.
-
-Undo exactly what you meant. Nothing else.
+Built for developers who think in *intent*, not timestamps.
 
 ---
 
-## What Ghost Line Is (and Isn’t)
+## Why Ghost Line Exists 😤
 
-### ✅ What it is
-- Line-scoped undo & redo
-- Snapshot-based (not keystroke-based)
-- Deterministic and predictable
-- Explicit, user-triggered actions
-- Independent of VS Code’s undo stack
+You’ve been here before:
 
-### ❌ What it is not
-- A replacement for global undo
-- A visual-heavy editor gimmick
-- A refactor or agent-aware system
-- A passive background modifier
+* You’re editing multiple parts of a file
+* You notice a typo on one line
+* You press `Ctrl + Z`
+* Something unrelated disappears
 
-Ghost Line is **intentional by design**.
+Nothing is technically broken — but your **flow is**.
 
----
+That’s because global undo is **time-based**.
+It answers the question:
 
-## Core Features
+> “What was the last edit operation?”
 
-### ✨ Line-Level Undo / Redo
-- Undo or redo **only the current line**
-- Other lines remain untouched
-- No interference with global undo
+But developers think differently:
 
-### 🧠 Snapshot-Based History
-- Tracks **line snapshots**, not raw keystrokes
-- Prevents partial or broken undo states
-- Redo stack is cleared on new edits (proper branching)
+* “Undo this line”
+* “Revert that typo”
+* “Bring back what *this* line used to be”
 
-### ⏱️ Idle-Based Capture
-- Snapshots are committed after typing pauses
-- Default idle delay: **400ms**
-- Avoids noisy, character-by-character history
-- Can be disabled entirely
-
-### 🧭 Cursor-Safe Initialization
-- First time you land on a line, its state is captured
-- Prevents the classic “first undo does nothing” bug
+This mismatch is exactly why **Ghost Line** exists.
 
 ---
 
-## Commands & Shortcuts
+## What Ghost Line Does 👻
 
-### Per-Line Actions
+Ghost Line runs **alongside native undo**, without interfering with it.
 
-| Action | Shortcut |
-|------|--------|
-| Undo current line | `Ctrl + Alt + Z` |
-| Redo current line | `Ctrl + Alt + Y` |
+**Core idea:**
 
-### History Inspection
+> Undo or redo **only the current line**, nothing else.
 
-| Action | Shortcut |
-|------|--------|
-| List line undo history | `Ctrl + Shift + Alt + Z` |
-| List line redo history | `Ctrl + Shift + Alt + Y` |
-
-> macOS users: `Ctrl` → `Cmd`
+* No global rewind
+* No collateral damage
+* No broken mental context
 
 ---
 
-## History Inspection UX (Intentional Design)
+## Features ✨
 
-Ghost Line **does not show persistent UI indicators**.
+* **Line-level undo / redo**
 
-No gutter dots. No clutter.
+  * Undo or redo changes on the active line only
+* **Independent history per line**
 
-Instead:
-- History is accessed **only when requested**
-- A QuickPick lists snapshots **newest → oldest**
-- Clicking an entry restores that exact snapshot
-- Restores do **not** create new history entries
+  * Each line maintains its own undo & redo stack
+* **Snapshot-based history**
 
-Inspection is read-only until you explicitly act.
+  * Tracks meaningful states, not raw keystrokes
+* **Debounced capture**
 
----
+  * Saves snapshots after typing pauses (default: 400ms)
+* **Line-shift aware**
 
-## Configuration
+  * History follows lines across inserts, deletes, and pastes
+* **Zero interference with native undo**
 
-Ghost Line exposes three settings:
-
-```json
-{
-  "ghostLine.maxHistoryPerLine": 20,
-  "ghostLine.idleDelay": 400,
-  "ghostLine.enableShortcuts": true
-}
-```
-
-### `maxHistoryPerLine`
-
-* Hard cap on undo snapshots per line
-* Oldest entries are evicted
-* Prevents unbounded memory growth
-
-### `idleDelay`
-
-* Idle time (ms) before snapshot is captured
-* `0` disables idle-based snapshots entirely
-* Changes apply immediately (no reload needed)
-
-### `enableShortcuts`
-
-* Gates **all shortcut-triggered commands**
-* Keybindings remain registered (VS Code limitation)
-* Commands safely no-op when disabled
-* Command Palette always works
+  * Global `Ctrl + Z` continues to work as usual
 
 ---
 
+## Keyboard Shortcuts ⌨️
+
+Designed to be muscle-memory friendly.
+
+| Action                 | Shortcut                 |
+| ---------------------- | ------------------------ |
+| Line Undo              | `Ctrl + Alt + Z`         |
+| Line Redo              | `Ctrl + Alt + Y`         |
+| List Line Undo History | `Ctrl + Shift + Alt + Z` |
+| List Line Redo History | `Ctrl + Shift + Alt + Y` |
+
+> All shortcuts are fully configurable in VS Code.
+
+---
+
+## Line-Level Undo / Redo in Action 🎥
+
+Undoing and redoing **only the current line**, without affecting the rest of the file.
+You can also open a **line-level history picker** to preview and restore previous versions of that line.
+
+![Ghost Line Demo](https://github.com/Namasivaayam-L/headless-blogs/blob/main/blogs/ghost-line/assets/videos/Ghost%20Line%20-%20Demo%20Video.gif?raw=true)
+
+---
+
+## Configuration ⚙️
+
+Ghost Line keeps configuration minimal and intentional.
+
+Available settings:
+
+* **Max history per line**
+  Limits how many snapshots are stored per line
+* **Idle delay**
+  Controls how aggressively snapshots are captured
+* **Enable shortcuts**
+  Toggle Ghost Line keybindings without uninstalling
+
+No settings bloat.
+No micromanagement.
+![ghostLine.maxHistoryPerLine, idleDelay, and enableShortcuts](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/3cl8uqptrmedjszoh63l.png)
+---
+
+## How It Works (High-Level) 🧠
+
+* Each line maintains its own undo/redo history
+* History is **snapshot-based**, not diff-based
+* Snapshots are captured:
+
+  * after typing pauses (debounced)
+  * when you move the cursor onto a line
+* Undo/redo restores snapshots **only for the active line**
+
+This design avoids VS Code API pitfalls and keeps behavior predictable.
+
+---
 ## Architectural Model
 
 History is stored as:
@@ -196,37 +187,71 @@ These boundaries are intentional.
 
 ---
 
-## Philosophy
+## Edge Cases & Limitations ⚠️
 
-Ghost Line behaves like a **first-class editing primitive**, not a convenience hack.
+### Handled Safely
 
-It is:
+* Line number shifts due to inserts or deletes
+* Redo invalidation after new edits
+* Safe no-ops when no history exists
+* Zero interference with native undo
 
-* Predictable
-* Discoverable
-* Memory-safe
-* UX-clean
+### Current Limitations
 
-If global undo feels like a sledgehammer,
-Ghost Line is the scalpel.
+* No block or range-based undo
+* Multi-line edits are not first-class citizens
+* History is session-scoped (not persisted across reloads)
 
----
-
-## Versioning
-
-* Current version: **0.0.1**
-* Public API is stable, internals may evolve
-* 1.0.0 will land only after multi-cursor or agent semantics are addressed
+These are **intentional scope decisions**, not oversights.
 
 ---
 
-## License
+## What’s Coming Next 🚧
 
-MIT
+Planned directions (no promises, just intent):
+
+* Hover previews for undo / redo states
+* Better multi-line awareness
 
 ---
 
-👻 **Ghost Line** — Undo exactly what you meant.
+## Installation 📦
 
+### From VS Code Marketplace
+
+👉 **[Ghost Line on VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=namachu.ghost-line)**
+
+### From Source
+
+```bash
+git clone https://github.com/Namasivaayam-L/ghost-line
+cd ghost-line
+npm install
+npm run compile
 ```
-```
+
+Press `F5` in VS Code to launch the Extension Development Host.
+
+---
+
+## Contributing & Feedback 🙌
+
+Ghost Line is open-source and built in public.
+
+* **Issues / Feature Requests**
+  Bugs, edge cases, and ideas are welcome
+
+* **Pull Requests**
+  Especially around correctness, UX, and edge cases
+
+* **Discussions**
+  If undo has ever betrayed you — you belong here 😄
+
+* **GitHub**: [https://github.com/Namasivaayam-L/ghost-line](https://github.com/Namasivaayam-L/ghost-line)
+
+* **Marketplace**: [https://marketplace.visualstudio.com/items?itemName=namachu.ghost-line](https://marketplace.visualstudio.com/items?itemName=namachu.ghost-line)
+
+If Ghost Line saves you even **one unnecessary undo**,
+mission accomplished 👻✨
+
+---

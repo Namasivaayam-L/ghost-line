@@ -2,7 +2,7 @@
   "name": "ghost-line",
   "displayName": "Ghost Line",
   "publisher": "namachu",
-  "description": "Global undo is mid; GhostLine gives you atomic, line-level time travel in VS Code so you can yeet a typo without nuking your entire flow.",
+  "description": "Global undo is mid; GhostLine gives you atomic, line-level time travel so you can yeet a typo without nuking your entire flow.",
   "version": "0.0.1",
   "repository": {
     "type": "git",
