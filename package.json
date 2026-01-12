@@ -3,7 +3,7 @@
   "displayName": "Ghost Line",
   "publisher": "namachu",
   "description": "Global undo is mid; GhostLine gives you atomic, line-level time travel so you can yeet a typo without nuking your entire flow.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/Namasivaayam-L/ghost-line.git"
